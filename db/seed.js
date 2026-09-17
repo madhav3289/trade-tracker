@@ -1,5 +1,5 @@
-// Seeds one demo user + ~25 transactions so the report endpoints have
-// something meaningful to aggregate. Run with: node db/seed.js
+// Seeds one demo user + ~25 transactions so the report endpoints have something meaningful to aggregate. 
+// Run with: node db/seed.js
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const pool = require('../src/db');

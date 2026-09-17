@@ -6,14 +6,12 @@ automated reporting" backend work.
 
 ## Stack
 
-Node.js, Express, PostgreSQL (raw SQL via `pg`, no ORM — the aggregation
-queries are intentionally hand-written), JWT auth, bcrypt.
+Node.js, Express, PostgreSQL (raw SQL), JWT auth, bcrypt.
 
 ## Setup
 
 1. `npm install`
-2. Create a Postgres database (free options: [Neon](https://neon.tech),
-   [Supabase](https://supabase.com), or run Postgres locally).
+2. Create a Postgres database (free options: [Neon](https://neon.tech), or run Postgres locally).
 3. Copy `.env.example` to `.env` and fill in `DATABASE_URL` and `JWT_SECRET`.
 4. Run the schema: `psql $DATABASE_URL -f db/schema.sql`
    (or paste `db/schema.sql` into your DB provider's SQL editor).
@@ -53,7 +51,11 @@ Authenticated routes require `Authorization: Bearer <token>`.
 curl -X POST localhost:3000/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"me@example.com","password":"supersecret"}'
-# -> { "user": {...}, "token": "..." }
+
+# Login
+curl -X POST localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"me@example.com","password":"supersecret"}'
 
 # Create a transaction (use the token from above)
 curl -X POST localhost:3000/transactions \
@@ -74,7 +76,7 @@ served automatically: once the server is running, open
 `http://localhost:3000` in a browser. This isn't meant to be a real UI, just
 a way to sanity-check the API without a terminal.
 
-## Design notes (for interview discussion)
+## Design
 
 - **Auth**: JWT is stateless and scales horizontally without a shared
   session store — fits the microservices-style setup this mirrors. Passwords
