@@ -18,7 +18,7 @@
 
 <h1>Trade Tracker — Test Console</h1>
 <p>Plain HTML/JS page for manually checking that every endpoint works. Not a real UI.</p>
-<p>API base: <input id="apiBase" value="http://localhost:3000" style="width:250px"></p>
+<p>API base: <input id="apiBase" value="" placeholder="leave blank to use this same site" style="width:250px"></p></p>
 <p>Status: <span id="status">not logged in</span></p>
 
 <h2>1. Sign Up / Log In</h2>
@@ -66,7 +66,10 @@
   updateStatus();
 
   function apiBase() {
-    return document.getElementById('apiBase').value.replace(/\/$/, '');
+    const value = document.getElementById('apiBase').value.trim();
+    // Blank = use whatever site this page is running on (works both
+    // locally at localhost:3000 and on the deployed Vercel URL).
+    return value ? value.replace(/\/$/, '') : window.location.origin;
   }
 
   function updateStatus() {
