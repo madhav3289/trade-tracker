@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trade Tracker — Test Console</title>
+<style>
+  body { font-family: monospace; max-width: 700px; margin: 30px auto; padding: 0 15px; }
+  h2 { border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 40px; }
+  label { display: block; margin-top: 8px; font-size: 13px; }
+  input, select { padding: 5px; margin-top: 2px; width: 200px; }
+  button { padding: 6px 14px; margin-top: 10px; cursor: pointer; }
+  pre { background: #f4f4f4; padding: 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  #status { font-weight: bold; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<h1>Trade Tracker — Test Console</h1>
+<p>Plain HTML/JS page for manually checking that every endpoint works. Not a real UI.</p>
+<p>API base: <input id="apiBase" value="http://localhost:3000" style="width:250px"></p>
+<p>Status: <span id="status">not logged in</span></p>
+
+<h2>1. Sign Up / Log In</h2>
+<div class="row">
+  <div>
+    <label>Email</label>
+    <input id="email" value="demo@example.com">
+    <label>Password</label>
+    <input id="password" type="password" value="demo1234">
+    <br>
+    <button onclick="signup()">Sign Up</button>
+    <button onclick="login()">Log In</button>
+  </div>
+</div>
+
+<h2>2. Create Transaction</h2>
+<div class="row">
+  <div>
+    <label>Type</label>
+    <select id="txType">
+      <option value="buy">buy</option>
+      <option value="sell">sell</option>
+    </select>
+    <label>Asset</label>
+    <input id="txAsset" value="BTC">
+    <label>Quantity</label>
+    <input id="txQuantity" value="0.5">
+    <label>Price</label>
+    <input id="txPrice" value="60000">
+    <br>
+    <button onclick="createTransaction()">Create Transaction</button>
+  </div>
+</div>
+
+<h2>3. View Data</h2>
+<button onclick="listTransactions()">List My Transactions</button>
+<button onclick="getSummary()">Get P&L Summary</button>
+<button onclick="getMonthly()">Get Monthly P&L</button>
+
+<h2>Response</h2>
+<pre id="output">(nothing yet)</pre>
+
+<script>
+  let token = localStorage.getItem('token') || null;
+  updateStatus();
+
+  function apiBase() {
+    return document.getElementById('apiBase').value.replace(/\/$/, '');
+  }
+
+  function updateStatus() {
+    document.getElementById('status').textContent = token
+      ? 'logged in (token stored)'
+      : 'not logged in';
+  }
+
+  function show(data) {
+    document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+  }
+
+  async function callApi(path, method, body, useAuth) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (useAuth) {
+      if (!token) {
+        show({ error: 'No token yet — sign up or log in first.' });
+        return null;
+      }
+      headers['Authorization'] = 'Bearer ' + token;
+    }
+
+    try {
+      const res = await fetch(apiBase() + path, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const isJson = res.headers.get('content-type')?.includes('application/json');
+      const data = isJson ? await res.json() : null;
+      show({ status: res.status, body: data });
+      return { status: res.status, data };
+    } catch (err) {
+      show({ error: 'Request failed: ' + err.message + ' (is the server running?)' });
+      return null;
+    }
+  }
+
+  async function signup() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const result = await callApi('/auth/signup', 'POST', { email, password }, false);
+    if (result && result.data && result.data.token) {
+      token = result.data.token;
+      localStorage.setItem('token', token);
+      updateStatus();
+    }
+  }
+
+  async function login() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const result = await callApi('/auth/login', 'POST', { email, password }, false);
+    if (result && result.data && result.data.token) {
+      token = result.data.token;
+      localStorage.setItem('token', token);
+      updateStatus();
+    }
+  }
+
+  async function createTransaction() {
+    const body = {
+      type: document.getElementById('txType').value,
+      asset: document.getElementById('txAsset').value,
+      quantity: parseFloat(document.getElementById('txQuantity').value),
+      price: parseFloat(document.getElementById('txPrice').value),
+    };
+    await callApi('/transactions', 'POST', body, true);
+  }
+
+  async function listTransactions() {
+    await callApi('/transactions', 'GET', null, true);
+  }
+
+  async function getSummary() {
+    await callApi('/reports/summary', 'GET', null, true);
+  }
+
+  async function getMonthly() {
+    await callApi('/reports/monthly', 'GET', null, true);
+  }
+</script>
+
+</body>
+</html>
